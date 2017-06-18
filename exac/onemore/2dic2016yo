@@ -1,0 +1,195 @@
+	.data
+	
+msg1:	.asciiz "Introduzca un numero: "
+
+	.text
+main:
+
+	la $a0, msg1
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall 
+	
+	move $a0, $v0
+	li $a1, 0
+	
+	jal create
+	
+	move $s0, $v0
+	
+loop:
+	la $a0, msg1
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall 
+	
+	beqz $v0, cero
+	
+	move $a0, $v0
+	move $a1, $s0
+	
+	jal insert_in_order
+	
+	bnez $v0, aux
+	
+	b loop
+aux:
+	move $s0, $v0
+	b loop
+
+cero:
+
+	move $a0, $s0
+	
+	jal print
+	
+	li $v0, 10
+	syscall
+	
+create:
+	subu $sp, $sp, 32
+	sw $ra, 20($sp)
+	sw $fp, 16($sp)
+	addiu $fp, $sp, 24
+	
+	sw $a0, 0($fp)
+	sw $a1, 4($fp)
+	
+	lw $v0, 4($fp)
+	
+	beqz $v0, init
+	
+	li $a0, 8
+	li $v0, 9
+	syscall
+	
+	lw $t0, 0($fp)
+	lw $t1, 4($fp)
+	
+	sw $t0, 0($v0)
+	sw $t1, 4($v0)
+	
+	b return_insert
+	
+init:
+	li $a0, 8
+	li $v0, 9
+	syscall
+	
+	lw $t0, 0($fp)
+	li $t1, 0
+	
+	sw $t0, 0($v0)
+	sw $t1, 4($v0)
+
+return_create:
+
+	lw $ra, 20($sp)
+	lw $fp, 16($sp)
+	addiu $sp, $sp, 32
+	jr $ra
+	
+insert_in_order:
+	subu $sp, $sp, 32
+	sw $ra, 20($sp)
+	sw $fp, 16($sp)
+	addiu $fp, $sp, 24
+	
+	sw $a0, 0($fp) #val
+	sw $a1, 4($fp) #dir
+	
+	move $v0, $a0
+	lw $v1, 0($a1)
+	
+	bge $v0, $v1, top
+	
+	lw $v0, 4($a1)
+	beqz $v0, end
+	
+	move $v0, $a0
+	lw $t0, 4($a1)
+	lw $v1, 0($t0)
+	bge $v0, $v1, medium
+	
+	lw $a1, 4($a1)
+	
+	jal insert_in_order
+
+return_insert:
+	
+	lw $ra, 20($sp)
+	lw $fp, 16($sp)
+	addiu $sp, $sp, 32
+	jr $ra
+
+top:
+	lw $a0, 0($fp)
+	lw $a1, 4($fp)
+	
+	jal create
+	
+	b return_insert
+	
+medium:
+	lw $a0, 0($fp)
+	lw $t0, 4($fp)
+	lw $a1, 4($t0)
+	
+	jal create
+	
+	lw $t0, 4($fp)
+	sw $v0, 4($t0)
+	
+	li $v0, 0
+	
+	b return_insert
+
+end:
+	lw $a0, 0($fp)
+	li $a1, 0
+	
+	jal create
+	
+	lw $t0, 4($fp)
+	sw $v0, 4($t0)
+	
+	li $v0, 0
+	
+	b return_insert
+	
+print:
+	subu $sp, $sp, 32
+	sw $ra, 20($sp)
+	sw $fp, 16($sp)
+	addiu $fp, $sp, 28
+	
+	sw $a0, 0($fp)
+	lw $v0, 4($a0)
+	bnez $v0, draw
+	
+	lw $a0, 0($a0)
+	li $v0, 1
+	syscall
+	
+	b return_print
+	
+draw:
+	move $a0, $v0
+	
+	jal print
+	
+	lw $a0, 0($fp)
+	lw $a0, 0($a0)
+	li $v0, 1
+	syscall
+	
+return_print:
+	lw $ra, 20($sp)
+	lw $fp, 16($sp)
+	addiu $sp, $sp, 32
+	jr $ra
+
